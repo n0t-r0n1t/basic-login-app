@@ -1,4 +1,5 @@
-import React, {useState, useEffect} from 'react';
+import React, {useEffect} from 'react';
+import {connect} from 'react-redux';
 import {
   View,
   Text,
@@ -7,50 +8,29 @@ import {
   RefreshControl,
   StyleSheet,
 } from 'react-native';
+import {fetchPostsRequest} from './actions/postActions';
+import {useNavigation} from '@react-navigation/native';
 
-const PostListScreen = ({navigation}) => {
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [error, setError] = useState<any>(null);
+const PostListScreen = ({posts, loading, error, fetchPostsRequest}: any) => {
+  const navigation = useNavigation();
 
-  const fetchPosts = async () => {
-    try {
-      const response = await fetch(
-        'https://jsonplaceholder.typicode.com/posts',
-      );
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      const data = await response.json();
-      setPosts(data);
-      setError(null); // Clear the previous error if the request succeeds
-      // eslint-disable-next-line no-catch-shadow, @typescript-eslint/no-shadow
-    } catch (error) {
-      console.error('Error fetching posts:', error);
-      setError('Error fetching posts. Please try again later.');
-    } finally {
-      setLoading(false);
-    }
-  };
+  useEffect(() => {
+    fetchPostsRequest();
+  });
 
   const handleRefresh = () => {
-    setRefreshing(true);
-    fetchPosts().then(() => setRefreshing(false));
+    fetchPostsRequest();
   };
 
-  const renderPostItem = ({item}) => (
+  const renderPostItem = ({item}: any) => (
     <TouchableOpacity
       style={styles.postItem}
+      // @ts-expect-error
       onPress={() => navigation.navigate('PostDetails', {post: item})}>
       <Text style={styles.postTitle}>{item.title}</Text>
       <Text style={styles.postBody}>{item.body}</Text>
     </TouchableOpacity>
   );
-
-  useEffect(() => {
-    fetchPosts();
-  }, []);
 
   if (loading) {
     return (
@@ -78,12 +58,22 @@ const PostListScreen = ({navigation}) => {
         renderItem={renderPostItem}
         keyExtractor={item => String(item.id)}
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} />
+          <RefreshControl refreshing={loading} onRefresh={handleRefresh} />
         }
       />
     </View>
   );
 };
+
+const mapStateToProps = (state: {
+  posts: {posts: any; loading: any; error: any};
+}) => ({
+  posts: state.posts.posts,
+  loading: state.posts.loading,
+  error: state.posts.error,
+});
+
+export default connect(mapStateToProps, {fetchPostsRequest})(PostListScreen);
 
 const styles = StyleSheet.create({
   container: {
@@ -116,5 +106,3 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
 });
-
-export default PostListScreen;

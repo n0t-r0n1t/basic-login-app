@@ -4,7 +4,67 @@ import React from 'react';
 import {render, fireEvent} from '@testing-library/react-native';
 import Login from '../src/Login';
 import PostListScreen from '../src/PostListScreen';
-import {Alert} from 'react-native';
+
+import {expectSaga} from 'redux-saga-test-plan';
+import configureStore from 'redux-mock-store';
+import {fetchPostsSaga} from '../src/sagas/postSaga';
+import {
+  fetchPostsRequest,
+  fetchPostsSuccess,
+  fetchPostsFailure,
+} from '../src/actions/postActions';
+import {call} from 'redux-saga-test-plan/matchers';
+
+const mockStore = configureStore([]);
+
+describe('Redux Saga', () => {
+  it('handles successful fetching of posts', () => {
+    const responseData = [
+      {id: 1, title: 'Test Post', body: 'This is a test post.'},
+    ];
+    return expectSaga(fetchPostsSaga)
+      .provide([
+        [
+          call(fetch, 'https://jsonplaceholder.typicode.com/posts'),
+          {ok: true, json: () => responseData},
+        ],
+      ])
+      .put(fetchPostsSuccess(responseData))
+      .run();
+  });
+
+  it('handles failed fetching of posts', () => {
+    return expectSaga(fetchPostsSaga)
+      .provide([
+        [
+          call(fetch, 'https://jsonplaceholder.typicode.com/posts'),
+          {ok: false},
+        ],
+      ])
+      .put(fetchPostsFailure('Error fetching posts. Please try again later.'))
+      .run();
+  });
+});
+
+describe('Redux Store', () => {
+  it('handles fetching of posts with success', async () => {
+    const store = mockStore({});
+    await store.dispatch(fetchPostsRequest());
+    const actions = store.getActions();
+    expect(actions).toContainEqual(
+      fetchPostsSuccess([{id: 1, title: 'Test Post'}]),
+    );
+  });
+
+  it('handles fetching of posts with failure', async () => {
+    const store = mockStore({});
+    await store.dispatch(fetchPostsRequest());
+    const actions = store.getActions();
+    expect(actions).toContainEqual(
+      fetchPostsFailure('Error fetching posts. Please try again later.'),
+    );
+  });
+});
 
 test('renders login screen correctly', () => {
   const mockNavigation = {navigate: jest.fn()};

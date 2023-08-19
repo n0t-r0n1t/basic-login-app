@@ -8,47 +8,9 @@ import {
   Alert,
   StyleSheet,
 } from 'react-native';
-
-const Login = ({navigation}) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-
-  const handleLogin = async () => {
-    // Replace these hardcoded values with your desired username and password
-    const validUsername = 'admin';
-    const validPassword = 'password';
-
-    if (username === validUsername && password === validPassword) {
-      // Save the logged-in status in async storage for a real application
-      Alert.alert('Login successful.');
-      navigation.navigate('PostList');
-    } else {
-      Alert.alert('Login failed.');
-    }
-  };
-
-  return (
-    <View style={styles.container}>
-      <Text style={styles.heading}>Login</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Username"
-        onChangeText={text => setUsername(text)}
-        value={username}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        onChangeText={text => setPassword(text)}
-        value={password}
-        secureTextEntry
-      />
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Log in</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
+import {loginRequest} from './actions/loginActions';
+import {connect} from 'react-redux';
+import {useNavigation} from '@react-navigation/native';
 
 const styles = StyleSheet.create({
   container: {
@@ -82,4 +44,47 @@ const styles = StyleSheet.create({
   },
 });
 
-export default Login;
+const Login = ({isAuthenticated, loginRequest}: any) => {
+  const navigation = useNavigation();
+
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  const handleLogin = () => {
+    loginRequest(username, password);
+  };
+
+  if (isAuthenticated) {
+    Alert.alert('Login successful.');
+    // @ts-expect-error
+    navigation.navigate('PostList');
+  }
+
+  return (
+    <View style={styles.container}>
+      <Text style={styles.heading}>Login</Text>
+      <TextInput
+        style={styles.input}
+        placeholder="Username"
+        onChangeText={text => setUsername(text)}
+        value={username}
+      />
+      <TextInput
+        style={styles.input}
+        placeholder="Password"
+        onChangeText={text => setPassword(text)}
+        value={password}
+        secureTextEntry
+      />
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Log in</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
+
+const mapStateToProps = (state: {auth: {isAuthenticated: boolean}}) => ({
+  isAuthenticated: state.auth.isAuthenticated,
+});
+
+export default connect(mapStateToProps, {loginRequest})(Login);

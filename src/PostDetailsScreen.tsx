@@ -1,7 +1,7 @@
 import React from 'react';
 import {View, Text, StyleSheet} from 'react-native';
 
-const PostDetailsScreen = ({route}) => {
+const PostDetailsScreen = ({route}: any) => {
   const {post} = route.params;
 
   return (
